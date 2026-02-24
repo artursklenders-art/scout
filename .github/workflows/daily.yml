@@ -1,0 +1,48 @@
+name: Daily Market Scout
+
+on:
+  schedule:
+    # GitHub Actions schedule is UTC. Two times are used to handle DST shifts for Europe/Riga.
+    - cron: "30 5 * * 1-5"
+    - cron: "30 6 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  send-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Guard exact local time (08:30 Europe/Riga)
+        run: |
+          now_riga="$(TZ='Europe/Riga' date +'%H:%M')"
+          echo "Current Europe/Riga time: ${now_riga}"
+          if [ "$now_riga" != "08:30" ]; then
+            echo "Not 08:30 in Europe/Riga, skipping run."
+            exit 0
+          fi
+
+      - name: Run scout
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+          SMTP_HOST: smtp.gmail.com
+          SMTP_PORT: "587"
+          SMTP_USER: arturs.klenders@gmail.com
+          SMTP_APP_PASSWORD: ${{ secrets.SMTP_APP_PASSWORD }}
+          EMAIL_TO: arturs.klenders@gmail.com
+          TIMEZONE: Europe/Riga
+          OPENAI_TIMEOUT_SECONDS: "60"
+          OPENAI_MAX_RETRIES: "3"
+          NEWS_LOOKBACK_HOURS: "24"
+          NEWS_MAX_ITEMS: "30"
+          RSS_TIMEOUT_SECONDS: "15"
+          EMAIL_MAX_CHARS: "25000"
+        run: python scout.py
