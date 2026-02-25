@@ -1,6 +1,6 @@
 # Market Scout (Daily Email via Gmail SMTP)
 
-Automated market digest sender that runs every weekday at 08:30 Europe/Riga and emails a plain-text report to `arturs.klenders@gmail.com`.
+Automated market digest sender that runs every weekday at 15:45 Europe/Riga and emails a plain-text report to `arturs.klenders@gmail.com`.
 
 Mode: **OpenAI API only (paid)**.
 Main schedule mode: **GitHub Actions** (works even when laptop is off).
@@ -65,7 +65,7 @@ Workflow file is included: `.github/workflows/daily.yml`.
 
 Important:
 - GitHub schedule is in UTC.
-- Workflow has two UTC triggers (`05:30` and `06:30`) and an internal local-time guard to run only at `08:30 Europe/Riga` (handles DST).
+- Workflow has two UTC triggers (`12:45` and `13:45`) and an internal local-time guard to run only at `15:45 Europe/Riga` (handles DST).
 
 Required GitHub Secrets:
 - `OPENAI_API_KEY`
@@ -77,10 +77,10 @@ How to add secrets:
 
 ### B) Local: cron (Mac/Linux)
 
-Run on weekdays at 08:30 Riga:
+Run on weekdays at 15:45 Riga:
 
 ```cron
-30 8 * * 1-5 cd /path/to/market-scout && /usr/bin/env python3 scout.py >> /tmp/market_scout.log 2>&1
+45 15 * * 1-5 cd /path/to/market-scout && /usr/bin/env python3 scout.py >> /tmp/market_scout.log 2>&1
 ```
 
 ## 5) Output format (email is in Russian)
