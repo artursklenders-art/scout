@@ -20,16 +20,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Guard exact local time (08:30 Europe/Riga)
-        run: |
-          now_riga="$(TZ='Europe/Riga' date +'%H:%M')"
-          echo "Current Europe/Riga time: ${now_riga}"
-          if [ "$now_riga" != "08:30" ]; then
-            echo "Not 08:30 in Europe/Riga, skipping run."
-            exit 0
-          fi
-
-      - name: Run scout
+      - name: Run scout at 08:30 Europe/Riga only
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
@@ -45,4 +36,11 @@ jobs:
           NEWS_MAX_ITEMS: "30"
           RSS_TIMEOUT_SECONDS: "15"
           EMAIL_MAX_CHARS: "25000"
-        run: python scout.py
+        run: |
+          now_riga="$(TZ='Europe/Riga' date +'%H:%M')"
+          echo "Current Europe/Riga time: ${now_riga}"
+          if [ "$now_riga" != "08:30" ]; then
+            echo "Not 08:30 in Europe/Riga, skipping run."
+            exit 0
+          fi
+          python scout.py
