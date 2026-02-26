@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -10,20 +10,24 @@ class ConfigError(ValueError):
 
 @dataclass(frozen=True)
 class Config:
-    openai_api_key: str
+    openai_api_key: str = field(repr=False)
     openai_model: str
     openai_timeout_seconds: int
     openai_max_retries: int
+    twelve_data_api_key: str = field(repr=False)
+    twelve_data_max_retries: int
+    twelve_data_cache_ttl_seconds: int
+    twelve_data_lookback_days: int
+    twelve_data_max_credits_per_minute: int
     smtp_host: str
     smtp_port: int
     smtp_user: str
-    smtp_app_password: str
+    smtp_app_password: str = field(repr=False)
     email_to: str
     timezone: str
     news_lookback_hours: int
     news_max_items: int
     rss_timeout_seconds: int
-    email_max_chars: int
     user_agent: str
 
 
@@ -32,6 +36,7 @@ def load_config(env_path: str = ".env") -> Config:
 
     openai_api_key = _require_env("OPENAI_API_KEY")
     openai_model = _require_env("OPENAI_MODEL")
+    twelve_data_api_key = _require_env("TWELVE_DATA_API_KEY")
 
     smtp_host = _require_env("SMTP_HOST")
     smtp_port = _parse_int("SMTP_PORT", _require_env("SMTP_PORT"))
@@ -54,6 +59,22 @@ def load_config(env_path: str = ".env") -> Config:
         "OPENAI_MAX_RETRIES",
         os.getenv("OPENAI_MAX_RETRIES", "3"),
     )
+    twelve_data_max_retries = _parse_int(
+        "TWELVE_DATA_MAX_RETRIES",
+        os.getenv("TWELVE_DATA_MAX_RETRIES", "3"),
+    )
+    twelve_data_cache_ttl_seconds = _parse_int(
+        "TWELVE_DATA_CACHE_TTL_SECONDS",
+        os.getenv("TWELVE_DATA_CACHE_TTL_SECONDS", "300"),
+    )
+    twelve_data_lookback_days = _parse_int(
+        "TWELVE_DATA_LOOKBACK_DAYS",
+        os.getenv("TWELVE_DATA_LOOKBACK_DAYS", "60"),
+    )
+    twelve_data_max_credits_per_minute = _parse_int(
+        "TWELVE_DATA_MAX_CREDITS_PER_MINUTE",
+        os.getenv("TWELVE_DATA_MAX_CREDITS_PER_MINUTE", "8"),
+    )
     news_lookback_hours = _parse_int(
         "NEWS_LOOKBACK_HOURS",
         os.getenv("NEWS_LOOKBACK_HOURS", "24"),
@@ -66,28 +87,34 @@ def load_config(env_path: str = ".env") -> Config:
         "RSS_TIMEOUT_SECONDS",
         os.getenv("RSS_TIMEOUT_SECONDS", "15"),
     )
-    email_max_chars = _parse_int(
-        "EMAIL_MAX_CHARS",
-        os.getenv("EMAIL_MAX_CHARS", "25000"),
-    )
 
     if smtp_port != 587:
         raise ConfigError("SMTP_PORT must be 587 for STARTTLS in this project.")
 
     if openai_max_retries < 1:
         raise ConfigError("OPENAI_MAX_RETRIES must be >= 1")
+    if twelve_data_max_retries < 1:
+        raise ConfigError("TWELVE_DATA_MAX_RETRIES must be >= 1")
+    if twelve_data_cache_ttl_seconds < 0:
+        raise ConfigError("TWELVE_DATA_CACHE_TTL_SECONDS must be >= 0")
+    if twelve_data_lookback_days < 7:
+        raise ConfigError("TWELVE_DATA_LOOKBACK_DAYS must be >= 7")
+    if twelve_data_max_credits_per_minute < 1:
+        raise ConfigError("TWELVE_DATA_MAX_CREDITS_PER_MINUTE must be >= 1")
 
     if news_max_items < 5:
         raise ConfigError("NEWS_MAX_ITEMS must be >= 5")
-
-    if email_max_chars < 5000:
-        raise ConfigError("EMAIL_MAX_CHARS must be >= 5000")
 
     return Config(
         openai_api_key=openai_api_key,
         openai_model=openai_model,
         openai_timeout_seconds=openai_timeout_seconds,
         openai_max_retries=openai_max_retries,
+        twelve_data_api_key=twelve_data_api_key,
+        twelve_data_max_retries=twelve_data_max_retries,
+        twelve_data_cache_ttl_seconds=twelve_data_cache_ttl_seconds,
+        twelve_data_lookback_days=twelve_data_lookback_days,
+        twelve_data_max_credits_per_minute=twelve_data_max_credits_per_minute,
         smtp_host=smtp_host,
         smtp_port=smtp_port,
         smtp_user=smtp_user,
@@ -97,7 +124,6 @@ def load_config(env_path: str = ".env") -> Config:
         news_lookback_hours=news_lookback_hours,
         news_max_items=news_max_items,
         rss_timeout_seconds=rss_timeout_seconds,
-        email_max_chars=email_max_chars,
         user_agent=os.getenv(
             "USER_AGENT",
             "MarketScout/1.0 (+https://github.com/your-org/market-scout)",

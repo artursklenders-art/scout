@@ -3,8 +3,8 @@ name: Daily Market Scout
 on:
   schedule:
     # GitHub Actions schedule is UTC. Two times are used to handle DST shifts for Europe/Riga.
-    - cron: "45 12 * * 1-5"
-    - cron: "45 13 * * 1-5"
+    - cron: "30 5 * * 1-5"
+    - cron: "30 6 * * 1-5"
   workflow_dispatch:
 
 jobs:
@@ -20,12 +20,13 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Run scout at 15:45 Europe/Riga only
+      - name: Run scout at 08:30 Europe/Riga only
         env:
           EVENT_NAME: ${{ github.event_name }}
           EVENT_SCHEDULE: ${{ github.event.schedule }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+          TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
           SMTP_HOST: smtp.gmail.com
           SMTP_PORT: "587"
           SMTP_USER: arturs.klenders@gmail.com
@@ -34,10 +35,13 @@ jobs:
           TIMEZONE: Europe/Riga
           OPENAI_TIMEOUT_SECONDS: "60"
           OPENAI_MAX_RETRIES: "3"
+          TWELVE_DATA_MAX_RETRIES: "3"
+          TWELVE_DATA_CACHE_TTL_SECONDS: "300"
+          TWELVE_DATA_LOOKBACK_DAYS: "60"
+          TWELVE_DATA_MAX_CREDITS_PER_MINUTE: "8"
           NEWS_LOOKBACK_HOURS: "24"
           NEWS_MAX_ITEMS: "30"
           RSS_TIMEOUT_SECONDS: "15"
-          EMAIL_MAX_CHARS: "25000"
         run: |
           offset_riga="$(TZ='Europe/Riga' date +'%z')"
           now_riga="$(TZ='Europe/Riga' date +'%Y-%m-%d %H:%M')"
@@ -46,9 +50,9 @@ jobs:
 
           if [ "${EVENT_NAME}" = "schedule" ]; then
             if [ "${offset_riga}" = "+0200" ]; then
-              expected_schedule="45 13 * * 1-5"
+              expected_schedule="30 6 * * 1-5"
             elif [ "${offset_riga}" = "+0300" ]; then
-              expected_schedule="45 12 * * 1-5"
+              expected_schedule="30 5 * * 1-5"
             else
               echo "Unexpected Europe/Riga offset: ${offset_riga}"
               exit 1
