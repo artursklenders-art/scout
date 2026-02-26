@@ -65,7 +65,7 @@ Workflow file is included: `.github/workflows/daily.yml`.
 
 Important:
 - GitHub schedule is in UTC.
-- Workflow has two UTC triggers (`12:45` and `13:45`) and an internal local-time guard to run only at `15:45 Europe/Riga` (handles DST).
+- Workflow has two UTC triggers (`12:45` and `13:45`) and an internal DST guard by Riga UTC offset (`+0300`/`+0200`) to avoid duplicate sends and stay robust to GitHub schedule delays.
 
 Required GitHub Secrets:
 - `OPENAI_API_KEY`

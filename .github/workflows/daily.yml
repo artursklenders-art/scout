@@ -22,6 +22,8 @@ jobs:
 
       - name: Run scout at 15:45 Europe/Riga only
         env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
           SMTP_HOST: smtp.gmail.com
@@ -37,10 +39,25 @@ jobs:
           RSS_TIMEOUT_SECONDS: "15"
           EMAIL_MAX_CHARS: "25000"
         run: |
-          now_riga="$(TZ='Europe/Riga' date +'%H:%M')"
-          echo "Current Europe/Riga time: ${now_riga}"
-          if [ "$now_riga" != "15:45" ]; then
-            echo "Not 15:45 in Europe/Riga, skipping run."
-            exit 0
+          offset_riga="$(TZ='Europe/Riga' date +'%z')"
+          now_riga="$(TZ='Europe/Riga' date +'%Y-%m-%d %H:%M')"
+          echo "Current Europe/Riga time: ${now_riga} (offset ${offset_riga})"
+          echo "Trigger event: ${EVENT_NAME}, schedule: ${EVENT_SCHEDULE:-n/a}"
+
+          if [ "${EVENT_NAME}" = "schedule" ]; then
+            if [ "${offset_riga}" = "+0200" ]; then
+              expected_schedule="45 13 * * 1-5"
+            elif [ "${offset_riga}" = "+0300" ]; then
+              expected_schedule="45 12 * * 1-5"
+            else
+              echo "Unexpected Europe/Riga offset: ${offset_riga}"
+              exit 1
+            fi
+
+            if [ "${EVENT_SCHEDULE}" != "${expected_schedule}" ]; then
+              echo "Skip: this cron is not the active one for current Riga offset."
+              exit 0
+            fi
           fi
+
           python scout.py
